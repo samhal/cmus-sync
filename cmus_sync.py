@@ -25,34 +25,49 @@ def cmus_sync(play_cmus,play_phone,phone):
 	remove = b-a
 
 	if remove != {}:
+		if len(remove) != 0:	
+			pro = (100/float(len(remove)))
+			pr = pro
+		print ("Removing...")
+		print("["+(" "*20)+"]"+" 0%   ",end='\r')
 		for item in remove:
-			#remove files from phone
+			pro5 = int(pr/5)
 			name = ntpath.basename(item)
 			phonepath = phone+"/"+name
-			print ("Removing %s from %s. (%s/%s)" %
-			(name,phone,rmindex,len(remove)))
+			print(("["+("#"*pro5)+(" "*(20-pro5))+"]"+" "+str(round(pr,1))+"%   "),end='\r')
 			subprocess.call(["rm","-r",phonepath])
-			rmindex += 1
+			pr += pro	
+		else:
+			print(("["+("#"*20)+"]"+" 100%   "))
+			if len(remove) == 1:
+				print ("Done. Removed: %s song"%(len(remove)))
+			else:
+				print ("Done. Removed: %s songs"%(len(remove)))
 
 	if add !={}:
+		if len(add) != 0:	
+			pro = (100/float(len(add)))
+			pr = pro
+		print ("Adding...")
+		print("["+(" "*20)+"]"+" 0%   ",end='\r')
 		for item in add:
 			#add new files to phone
+			pro5 = int(pr/5)
 			name = ntpath.basename(item)
-			print ("Adding %s to %s. (%s/%s)" % (name,phone,addindex,len(add)))
-			subprocess.call(["rsync","-P",item,phone])
-			addindex += 1
+			print(("["+("#"*pro5)+(" "*(20-pro5))+"]"+" "+str(round(pr,1))+"%   "),end='\r')
+			subprocess.call(["rsync",item,phone])
+			pr += pro	
+		else:
+			print(("["+("#"*20)+"]"+" 100%  "))
+			if len(add) == 1:
+				print("Done. Added: %s new song"%(len(add)))		
+			else:
+				print("Done. Added: %s new songs"%(len(add)))		
+
 
 	subprocess.call(["cp","-r",play_cmus,play_phone])
 	
-	if len(remove) == 1:
-		print ("Done. Removed: %s song"%(len(remove)))
-	else:
-		print ("Done. Removed: %s songs"%(len(remove)))
 
-	if len(add) == 1:
-		print("Done. Added: %s new song"%(len(add)))		
-	else:
-		print("Done. Added: %s new songs"%(len(add)))		
 
 
 if __name__=='__main__':
