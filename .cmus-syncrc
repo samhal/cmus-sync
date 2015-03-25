@@ -1,0 +1,8 @@
+[phone]
+music = /home/sam/Phone/SD card/Music
+playlist = /home/sam/Phone/SD card/Music/playlist
+
+[source]
+music = /home/sam/External/Music
+playlist = /home/sam/.config/cmus/playlist.pl
+
