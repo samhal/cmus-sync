@@ -8,10 +8,11 @@ import os
 import configparser
 from os.path import expanduser
 
-def cmus_sync(play_cmus,play_phone,phone):
+def cmus_sync(source, play_cmus, phone, play_phone):
 	a = set()
 	b = set()
-
+	source_path = []
+	path = source
 	# adds every element of the source playlist
 	with open(play_cmus,"r") as source:
 		for line in source:
@@ -26,18 +27,22 @@ def cmus_sync(play_cmus,play_phone,phone):
 		if '' in b:
 			b.remove('')
 
+	while path != "/":
+		pair = posixpath.split(path)
+		source_path.append(pair[1])
+		path = pair[0]
 	# these items should be added to dest
 	add = a-b
 	# these items should be removed from dest
 	remove = b-a
 	
-	remove_songs(remove,phone)
-	add_songs(add,phone)
+	remove_songs(remove,phone,source_path)
+	add_songs(add,phone, source_path)
 
 
 	shutil.copy(play_cmus,play_phone)
 	
-def remove_songs(remove,phone):
+def remove_songs(remove,phone,source_path):
 	
 	# let the user know we're removing
 	print("Removing...")
@@ -57,25 +62,29 @@ def remove_songs(remove,phone):
 			prog = int(prp/2)
 			# add the directories and song name
 			path = item
-			
-			# get the artist/album/song path
-			for i in range(3):
+			phone_path = phone
+			# get the get the path from music folder to song
+			while path != '/':
 				dirs = posixpath.split(path)
 				path_elem.append(dirs[1])
 				path = dirs[0]	
 			
-			artist = phone + "/" + path_elem[2]
-			album = artist + "/" + path_elem[1]
-			song = album + "/" + path_elem[0]
-			
-			os.remove(song)
-			# if the album dir is empty we want to remove it
-			if os.listdir(album) == []:
-				os.rmdir(album)
-				# same goes for the artist dir
-				if os.listdir(artist) == []:
-					os.rmdir(artist)
-
+			# get the hierarchy the relative path from music folder
+			path_elem = [i for i in path_elem if i not in source_path]
+			# merge with phone path and remove song	
+			for i in reversed(path_elem):
+				phone_path = phone_path + '/' + i
+			else:
+				os.remove(phone_path)
+				path_elem.remove(path_elem[0])
+				phone_path =(posixpath.split(phone_path))[0]
+			# for all remaining elements(folders) check if its empty and
+			# removes
+			for i in path_elem:
+				if os.listdir(phone_path) == []:
+					os.rmdir(phone_path)
+				phone_path = (posixpath.split(phone_path))[0]
+					
 			# print current progress
 			print(("["+("#"*prog)+(" "*(50-prog))+"]"+" "+str(round(prp))+"%   "),end='\r')
 			prp += ppi
@@ -88,8 +97,7 @@ def remove_songs(remove,phone):
 		print ("Done. Removed: %s songs\n"%(len(remove)))
 
 
-
-def add_songs(add, phone):
+def add_songs(add, phone, source_path):
 
 	# let the user know we're removing
 	print("Adding...")
@@ -109,37 +117,26 @@ def add_songs(add, phone):
 			prog = int(prp/2)
 			# add the directories and song name
 			path = item
-
+			phone_path = phone
+			song = ""
 			# get the artist/album/song path
-			for i in range(3):
+			while path != '/':
 				dirs = posixpath.split(path)
 				path_elem.append(dirs[1])
 				path = dirs[0]	
-
-			artist = phone + "/" + path_elem[2]
-			album = artist + "/" + path_elem[1]
-			song = album + "/" + path_elem[0]
-			
-			
-			# check if artist dir exists
-			if posixpath.exists(artist):
-				# checks if album dir exits
-				if posixpath.exists(album):
-					# copy song to album dir
-					shutil.copy(item,song)
-				else:
-					# create album dir
-					os.makedirs(album)
-					# copy song to album dir
-					shutil.copy(item,song)
-			else:
-				# create artist dir
-				os.makedirs(artist)
-				# create album dir
-				os.makedirs(album)
-				# copy song to album dir
-				shutil.copy(item,song)
-
+			path_elem = [i for i in path_elem if i not in source_path]
+			song = path_elem[0]
+			path_elem.remove(path_elem[0])
+			# create the wanted folder hierarchy
+			for i in reversed(path_elem):
+				phone_path = phone_path + "/" + i
+				if not(posixpath.exists(phone_path)):
+					os.makedirs(phone_path)
+			# add song
+			phone_path = phone_path + "/" + song
+			shutil.copy(item,phone_path)
+		
+	
 			# print current progress
 			print(("["+("#"*prog)+(" "*(50-prog))+"]"+" "+str(round(prp))+"%   "),end='\r')
 			prp += ppi
@@ -164,10 +161,11 @@ if __name__=='__main__':
 	play_cmus = config["source"] ["playlist"]
 
 	# prints the paths from the config file
-	print("\nMusic destination: %s"%(phone))
+	print("\nSource: %s"%(source))
+	print("Music destination: %s"%(phone))
 	print("Source playlist: %s"%(play_cmus))
 	print("Phone playlist: %s\n"%(play_phone))
 	
-	cmus_sync(play_cmus, play_phone, phone)
+	cmus_sync(source, play_cmus, phone, play_phone)
 	#end time for program
 	print("--- %s seconds ---" % (round((time.time() - start_time),3)))
