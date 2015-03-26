@@ -1,5 +1,5 @@
 # cmus-sync
-Synchronize your device with a existing cmus playlist.
+Synchronize your device with the cmus playlist.
 
 ## Installation
 1. Clone the repo.
